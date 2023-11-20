@@ -18,7 +18,7 @@ reduction of other similar observing programs.
 
 The PDR programs (ERS-1288 and GTO-1192) all consist of NIRCam imaging, MIRI
 imaging, NIRSpec IFU spectroscopy, and MIRI IFU spectroscopy. The steps for the
-reduction of each of these are briefly scketched below, and bash scripts that
+reduction of each of these are briefly explained below, and bash scripts that
 implement these workflows will be provided.
 
 ### NIRSpec IFU
