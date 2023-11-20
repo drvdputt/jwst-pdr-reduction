@@ -18,8 +18,40 @@ reduction of other similar observing programs.
 
 The PDR programs (ERS-1288 and GTO-1192) all consist of NIRCam imaging, MIRI
 imaging, NIRSpec IFU spectroscopy, and MIRI IFU spectroscopy. The steps for the
-reduction of each of these are briefly explained below, and bash scripts that
-implement these workflows will be provided.
+reduction of each of these are briefly explained below, and a few shell scripts that
+implement these workflows are provided.
+
+### Manual steps
+
+Before running these tools on your data, the `_uncal` files have to be sorted according  to
+1. object
+2. instrument
+3. exposure type: science, background, and (for nirspec only) science imprint,
+   background imprint.
+
+The provided shell scripts can then be copied, and the paths set in them can be
+slightly modified to point to the directories containing the `_uncal` files. By
+default, the provided scripts assume that they are placed at the same level as
+the science, background, etc directories.
+
+- object 1
+  + nirspec
+    - `nirspec_script.bash`
+    - `science`
+    - `science_imprint`
+    - `background`
+    - `background_imprint`
+  + mirifu
+    - `mirifu_script.bash`
+    - `science`
+    - `background`
+- object 2
+  ...
+
+Side note on the historical reason for this: To work around some issues with the
+default association files, we coded a simplified association generator. The
+files need to be sorted for this generator to work, as it uses glob within a
+directory.
 
 ### NIRSpec IFU
 
@@ -49,3 +81,9 @@ extracted spectrum in an extra script.
 
 This can be added later. Some alignment based on stellar catalogs will be
 required. For NIRCam, a 1/f noise reduction would also be useful.
+
+### Shell scripts
+
+See `shell_scripts/`. It is recommended to copy one of these to your working
+directory, and then modify the calls the `pipeline` script and extra cleaning
+tools as needed.
