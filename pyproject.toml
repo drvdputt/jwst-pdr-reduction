@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "pdr-reduction"
+version = "0.1.0"
+description = "Tools for reducting JWST data from photodissociation region observations and similar programs"
+authors = ["Dries Van De Putte <dvandeputte@stsci.edu>"]
+license = "LICENSE"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
