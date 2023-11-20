@@ -24,3 +24,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 create_association = 'pdr_reduction.create_association:main'
 pipeline = 'pdr_reduction.pipeline_run:main'
+nsclean_run = 'pdr_reduction.nsclean_run:main'

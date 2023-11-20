@@ -102,3 +102,5 @@ located.
    page](https://webb.nasa.gov/content/forScientists/publications.html).
    Download and `nsclean_1.9.tar.gz`, then `cd` into `nsclean_1.9/` and run `pip
    install .` in your environment.
+4. Run `pip install pandas` to work around a numpy version conflict somewhere
+   down the dependency trees of `jwst` and `pandas`.
