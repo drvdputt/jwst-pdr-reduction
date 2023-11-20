@@ -71,6 +71,9 @@ def main():
             ]
         )
 
+    # if still nans after this, use 0 instead
+    D1 = np.nan_to_num(D1)
+
     cleaner = nsclean.NSClean(detector.upper(), M)
     D1 = cleaner.clean(D1, buff=True)
 
