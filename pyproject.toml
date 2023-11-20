@@ -9,12 +9,18 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.9"
 jwst = "^1.12.5"
+# jwst needs this version of scipy. I set it explicity because it solved scipy installation troubles.
 scipy = "1.9.3"
 crds = "^11.17.10"
 dill = "^0.3.7"
 astropy = "^5.3.4"
+multiprocess = "^0.70.15"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+create_association = 'pdr_reduction.create_association:main'
+pipeline = 'pdr_reduction.pipeline_run:main'
