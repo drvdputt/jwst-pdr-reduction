@@ -87,3 +87,18 @@ required. For NIRCam, a 1/f noise reduction would also be useful.
 See `shell_scripts/`. It is recommended to copy one of these to your working
 directory, and then modify the calls the `pipeline` script and extra cleaning
 tools as needed.
+
+Then run `bash script.bash` in the working directory where `science/` etc are
+located.
+
+## Installation
+
+1. Clone this repository
+2. Install the python package in your environment by running `pip install -e .`
+   in the root directory of this repository. Alternatively, use `poetry
+   install`, and then `poetry shell` to create and activate a new environment.
+3. Install a manual dependency: NSClean, see [Paper on
+   arxiv](https://arxiv.org/abs/2306.03250), and [download
+   page](https://webb.nasa.gov/content/forScientists/publications.html).
+   Download and `nsclean_1.9.tar.gz`, then `cd` into `nsclean_1.9/` and run `pip
+   install .` in your environment.
