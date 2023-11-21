@@ -40,7 +40,7 @@ def main():
     # choose right mask here. For medium gratings, use masks by Karl M.
     # (nrs1 only)
     if grating[-1] == "m":
-        mask_fn = f"nrs1_ifu_mask_thorough_update_01192_{grating}.fits"
+        mask_fn = f"nrs1_ifu_mask_thorough_update_01192_{grating}.fits.gz"
     elif grating[-1] == "h":
         mask_fn = f"{detector}_ifu_mask_thorough.fits.gz"
     else:
