@@ -105,6 +105,17 @@ located.
 4. Run `pip install pandas` to work around a numpy version conflict somewhere
    down the dependency trees of `jwst` and `pandas`.
 
+## Quick start
+
+1. Sort your data (see above)
+2. Copy the appropriate bash script from `shell_scripts/` to your working
+   directory
+3. Edit the copy of the script. Make sure to check the number of processes and
+   the CRDS context (pmap number `N`, `CRDS_PATH`, and `CRDS_SERVER_URL`).
+4. Activate the environment in which you installed this package (see
+   installation instructions above)
+5. Run `bash modified_script.bash`
+
 ## Credit
 
 Some of these tools were originally developed, tested, and used by the
