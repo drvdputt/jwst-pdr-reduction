@@ -5,7 +5,7 @@
 
 # J is the number of processes for stage 1 and 2. The recommended limit, is to make sure you
 # have about 10 GB of RAM per process. For the science cluster at ST, with 512 GB RAM, I use
-# J=48
+# J=48.
 J=48
 
 # JJ is the number of processes for stage 3, where cube_build is a big memory bottleneck. The
@@ -18,10 +18,10 @@ JJ=3
 # Use these if there's too much multithreading. On machines with high core counts, numpy etc can
 # sometimes launch a large number of threads. This doesn't give much speedup if multiprocessing
 # is used already.
-# export MKL_NUM_THREADS=1
-# export NUMEXPR_NUM_THREADS=1
-# export OMP_NUM_THREADS=1
-# export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
 
 # -- environment --
 # _________________
@@ -103,12 +103,12 @@ OUT_BKG_NSC=$(realpath $OUT_PFX_NSC/background)
 OUT_BKGI_NSC=$(realpath $OUT_PFX_NSC/background_imprint)
 
 # Use GNU parallel for performance
-parallel -j $J python nsclean-tool/code/dries.py {} $OUT_BKG_NSC/stage1/{/} ::: $OUT_BKG/stage1/*rate.fits
-parallel -j $J python nsclean-tool/code/dries.py {} $OUT_BKGI_NSC/stage1/{/} ::: $OUT_BKGI/stage1/*rate.fits
-parallel -j $J python nsclean-tool/code/dries.py {} $OUT_SCII_NSC/stage1/{/} ::: $OUT_SCII/stage1/*rate.fits
-parallel -j $J python nsclean-tool/code/dries.py {} $OUT_SCI_NSC/stage1/{/} ::: $OUT_SCI/stage1/*rate.fits
+parallel -j $J nsclean_run {} $OUT_BKG_NSC/stage1/{/} ::: $OUT_BKG/stage1/*rate.fits
+parallel -j $J nsclean_run {} $OUT_BKGI_NSC/stage1/{/} ::: $OUT_BKGI/stage1/*rate.fits
+parallel -j $J nsclean_run {} $OUT_SCII_NSC/stage1/{/} ::: $OUT_SCII/stage1/*rate.fits
+parallel -j $J nsclean_run {} $OUT_SCI_NSC/stage1/{/} ::: $OUT_SCI/stage1/*rate.fits
 
 # the rest of the steps with the cleaned data
-python $SCRIPT -j $J -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG
-python $SCRIPT -j $J -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI
-python $SCRIPT -j 3 -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI_NSC $IN_SCI
+pipeline -j $J -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG
+pipeline -j $J -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI
+pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI_NSC $IN_SCI
