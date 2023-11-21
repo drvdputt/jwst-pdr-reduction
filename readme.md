@@ -104,3 +104,13 @@ located.
    install .` in your environment.
 4. Run `pip install pandas` to work around a numpy version conflict somewhere
    down the dependency trees of `jwst` and `pandas`.
+
+## Credit
+
+Some of these tools were originally developed, tested, and used by the
+[PDRs4All](https://pdrs4all.org) data reduction team, consisting of[Felipe
+Alarcon Pena](https://github.com/Falarconp), Amelie Canin, [Ameek
+Sidhu](https://github.com/Ameek-Sidhu), Ilane Schroetter, Boris Trahin, and
+[Dries Van De Putte](https://github.com/drvdputt/).
+
+Others were developed in the context of program GTO-1192, by Dries Van De Putte.
