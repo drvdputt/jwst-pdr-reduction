@@ -15,6 +15,10 @@ crds = "^11.17.10"
 dill = "^0.3.7"
 astropy = "^5.3.4"
 multiprocess = "^0.70.15"
+specutils = "^1.12.0"
+regions = "^0.8"
+pahfitcube = {git = "https://github.com/drvdputt/PAHFITcube"}
+myastro = {git = "https://github.com/drvdputt/my-astro"}
 
 
 [build-system]
