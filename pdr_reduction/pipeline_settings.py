@@ -44,6 +44,7 @@ def pipeline_class_and_options_dict(stage, instrument, output_dir):
         if stage == 3:
             class_name = Spec3Pipeline
             options["steps"] = {
+                "master_background": {"save_background": True, "skip": False},
                 "outlier_detection": skipfalse,
                 "cube_build": {
                     "grating": "all",
@@ -73,13 +74,13 @@ def pipeline_class_and_options_dict(stage, instrument, output_dir):
                 # way, we can choose on the command line which
                 # background subtraction to do (by using the '-b' option
                 # in either stage 2 or 3, but not both).
-                "bkg_subtract": skipfalse,
+                "bkg_subtract": {"skip": False, "save_combined_background": True},
                 "residual_fringe": skipfalse,
             }
         if stage == 3:
             class_name = Spec3Pipeline
             options["steps"] = {
-                "master_background": skipfalse,
+                "master_background": {"save_background": True, "skip": False},
                 "outlier_detection": skipfalse,
                 "mrs_imatch": skiptrue,
                 "extract_1d": skiptrue,
