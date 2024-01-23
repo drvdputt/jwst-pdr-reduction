@@ -15,10 +15,11 @@ JJ=3
 # Use these if there's too much multithreading. On machines with high core counts, numpy etc can
 # sometimes launch a large number of threads. This can actually slow things down if
 # multiprocessing is used already.
-export MKL_NUM_THREADS=1
-export NUMEXPR_NUM_THREADS=1
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
+T=1
+export MKL_NUM_THREADS=$T
+export NUMEXPR_NUM_THREADS=$T
+export OMP_NUM_THREADS=$T
+export OPENBLAS_NUM_THREADS=$T
 
 # -- environment --
 # _________________
