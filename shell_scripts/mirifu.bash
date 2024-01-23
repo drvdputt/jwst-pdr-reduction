@@ -53,9 +53,7 @@ for d in science background
 do mkdir -p $OUT_PFX/$d
 done
 OUT_SCI=$(realpath $OUT_PFX/science)
-OUT_SCII=$(realpath $OUT_PFX/science_imprint)
 OUT_BKG=$(realpath $OUT_PFX/background)
-OUT_BKGI=$(realpath $OUT_PFX/background_imprint)
 
 # -- run the pipeline --
 # ______________________
