@@ -67,11 +67,13 @@ templates = {k: extract_and_merge(a) for k, a in zip(template_names, apertures)}
 
 # Construct astropy table and save as ECSV
 columns = {
-    "wavelength": templates["HII"].spectral_axis,
+    "wavelength": templates[template_names[0]].spectral_axis,
 }
 for k, v in templates.items():
-    columns[f"{k}_flux"] = v.flux
-    columns[f"{k}_unc"] = v.uncertainty.array * v.flux.unit
+    columns[f"flux_{k}"] = v.flux
+    columns[f"unc_{k}"] = v.uncertainty.array * v.flux.unit
 
 t = Table(columns)
-t.write("templates.ecsv", overwrite=True)
+fname = "templates.ecsv"
+print(f"Writing extracted spectra to {fname}")
+t.write(fname, overwrite=True)

@@ -91,6 +91,26 @@ tools as needed.
 Then run `bash script.bash` in the working directory where `science/` etc are
 located.
 
+## 1D merged spectrum extraction
+
+We provide a script that performs an aperture extraction on the final cubes,
+merges the spectral segments, and collects the results in a plain text table. To
+use it, the following is needed:
+1. A list of data cubes produced by the pipeline (can be the three NIRSpec cubes, the 12 MIRI cubes, or both sets)
+2. A single region file in the format as produced by DS9. All regions of
+   interest should be in one file, in sky coordinates. Currently, only rectangle
+   regions are supported
+
+The command is then for example
+
+```
+python pdr_reduction/extract_templates.py my_regions.reg nirspec/stage3/*s3d.fits miri/stage3/*s3d.fits --template_names Atomic DF
+```
+
+where the number of arguments for the optional `--template_names` should equal
+the number of regions in the `.reg` file. The output is a file called
+`templates.ecsv`, which can be loaded as an astropy table.
+
 ## Installation
 
 1. Clone this repository
