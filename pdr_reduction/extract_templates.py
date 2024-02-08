@@ -4,6 +4,7 @@ cubes.
 """
 import argparse
 from astropy.table import Table
+from astropy import units as u
 from regions import Regions
 from specutils import Spectrum1D
 from pahfitcube.cube_aperture import cube_sky_aperture_extraction
@@ -84,7 +85,7 @@ def extract_templates_table(cubes, apertures, template_names, apply_offsets=Fals
 
     # Construct astropy table and save as ECSV
     columns = {
-        "wavelength": templates[template_names[0]].spectral_axis,
+        "wavelength": templates[template_names[0]].spectral_axis.to(u.micron),
     }
     for k, v in templates.items():
         columns[f"flux_{k}"] = v.flux
