@@ -9,42 +9,55 @@ from specutils import Spectrum1D
 from pahfitcube.cube_aperture import cube_sky_aperture_extraction
 from myastro import spectral_segments, regionhacks
 
-ap = argparse.ArgumentParser()
-ap.add_argument(
-    "region_file", help="File containing DS9 regions representing template apertures."
-)
-ap.add_argument("cube_files", nargs="+", help="Data cubes to extract from and merge.")
-ap.add_argument(
-    "--apply_offsets",
-    action="store_true",
-    help="""Apply additive offsets to make the spectral stitching
-    smoother. Resulting continuum might be unrealistic.""",
-)
-ap.add_argument(
-    "--template_names",
-    nargs="+",
-    help="""Optional list of names to give to the template spectra.
-    Number of arguments must equal the number of apertures in the given
-    region file. E.g. "HII", "Atomic", "DF3", "DF2", "DF1" for the Orion
-    templates.""",
-)
-args = ap.parse_args()
 
-# set up template apertures and names
-regions = Regions.read(args.region_file)
-apertures = [regionhacks.rectangle_to_aperture(r) for r in regions]
-if args.template_names is None:
-    template_names = [f"T{i}" for i in range(1, len(apertures) + 1)]
-else:
-    template_names = args.template_names
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "region_file",
+        help="File containing DS9 regions representing template apertures.",
+    )
+    ap.add_argument(
+        "cube_files", nargs="+", help="Data cubes to extract from and merge."
+    )
+    ap.add_argument(
+        "--apply_offsets",
+        action="store_true",
+        help="""Apply additive offsets to make the spectral stitching
+        smoother. Resulting continuum might be unrealistic.""",
+    )
+    ap.add_argument(
+        "--template_names",
+        nargs="+",
+        help="""Optional list of names to give to the template spectra.
+        Number of arguments must equal the number of apertures in the given
+        region file. E.g. "HII", "Atomic", "DF3", "DF2", "DF1" for the Orion
+        templates.""",
+    )
+    args = ap.parse_args()
 
-# load the cubes
-cubes = spectral_segments.sort(
-    [Spectrum1D.read(cf, format="JWST s3d") for cf in args.cube_files]
-)
+    # load the cubes
+    cubes = spectral_segments.sort(
+        [Spectrum1D.read(cf, format="JWST s3d") for cf in args.cube_files]
+    )
+
+    # set up template apertures and names
+    regions = Regions.read(args.region_file)
+    apertures = [regionhacks.rectangle_to_aperture(r) for r in regions]
+
+    # determine template names
+    if args.template_names is None:
+        template_names = [f"T{i}" for i in range(1, len(apertures) + 1)]
+    else:
+        template_names = args.template_names
+
+    t = extract_templates_table(cubes, apertures, args.apply_offsets, template_names)
+    fname = "templates.ecsv"
+    print(f"Writing extracted spectra to {fname}")
+    t.write(fname, overwrite=True)
 
 
-def extract_and_merge(aperture):
+# define this local utility function
+def extract_and_merge(cubes, aperture, apply_offsets):
     """Steps that need to happen for every aperture.
 
     1. extract from every given cube
@@ -52,7 +65,7 @@ def extract_and_merge(aperture):
     3. return a single merged spectrum"""
     specs = [cube_sky_aperture_extraction(s, aperture) for s in cubes]
 
-    if args.apply_offsets:
+    if apply_offsets:
         shifts = spectral_segments.overlap_shifts(specs)
         # choose a segment in the middle as the reference for the stitching
         offsets = spectral_segments.shifts_to_offsets(shifts, len(specs) // 2)
@@ -63,17 +76,23 @@ def extract_and_merge(aperture):
     return spectral_segments.merge_1d(specs_to_merge)
 
 
-templates = {k: extract_and_merge(a) for k, a in zip(template_names, apertures)}
+def extract_templates_table(cubes, apertures, template_names, apply_offsets=False):
+    templates = {
+        k: extract_and_merge(cubes, a, apply_offsets)
+        for k, a in zip(template_names, apertures)
+    }
 
-# Construct astropy table and save as ECSV
-columns = {
-    "wavelength": templates[template_names[0]].spectral_axis,
-}
-for k, v in templates.items():
-    columns[f"flux_{k}"] = v.flux
-    columns[f"unc_{k}"] = v.uncertainty.array * v.flux.unit
+    # Construct astropy table and save as ECSV
+    columns = {
+        "wavelength": templates[template_names[0]].spectral_axis,
+    }
+    for k, v in templates.items():
+        columns[f"flux_{k}"] = v.flux
+        columns[f"unc_{k}"] = v.uncertainty.array * v.flux.unit
 
-t = Table(columns)
-fname = "templates.ecsv"
-print(f"Writing extracted spectra to {fname}")
-t.write(fname, overwrite=True)
+    t = Table(columns)
+    return t
+
+
+if __name__ == "__main__":
+    main()
