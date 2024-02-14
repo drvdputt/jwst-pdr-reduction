@@ -6,29 +6,30 @@
 # J is the number of processes for stage 1 and 2. The recommended limit, is to make sure you
 # have about 10 GB of RAM per process. For the science cluster at ST, with 512 GB RAM, I use
 # J=48.
-J=48
+J=2
 
 # JJ is the number of processes for stage 3, where cube_build is a big memory bottleneck. The
 # required memory depends heavily on the final shape of the cube. For Orion, there is lots of
 # empty space in the cubes with the default coordinate grids, and about 50 GB of RAM was needed
 # per process. But with ~200GB RAM, the 3 NIRSpec cubes can be built simultaneously, which saves
 # some time for this slow step.
-JJ=3
+JJ=2
 
 # Use these if there's too much multithreading. On machines with high core counts, numpy etc can
 # sometimes launch a large number of threads. This doesn't give much speedup if multiprocessing
 # is used already.
-export MKL_NUM_THREADS=1
-export NUMEXPR_NUM_THREADS=1
-export OMP_NUM_THREADS=1
-export OPENBLAS_NUM_THREADS=1
+T=4
+export MKL_NUM_THREADS=$T
+export NUMEXPR_NUM_THREADS=$T
+export OMP_NUM_THREADS=$T
+export OPENBLAS_NUM_THREADS=$T
 
 # -- environment --
 # _________________
 
 # Set CRDS context here. If N is not a number, no context will be set, resulting in the latest
 # pmap.
-export CRDS_PATH=/home/dvandeputte/storage/crds_cache
+export CRDS_PATH=/Users/dvandeputte/crds_cache
 export CRDS_SERVER_URL=https://jwst-crds.stsci.edu
 # N=1147
 N=latest
@@ -46,21 +47,18 @@ python -c "import sys; print(sys.executable)"
 
 # Specify input directories as recommended in the readme. The script needs absolute paths for
 # everything. This is a quirk of the association generator.
-IN_SCI=$(realpath science)
-IN_SCII=$(realpath science_imprint)
-IN_BKG=$(realpath background)
-IN_BKGI=$(realpath background_imprint)
+HERE=$(pwd | realpath)
+IN_SCI=$HERE/science
+IN_SCII=$HERE/science_imprint
+IN_BKG=$HERE/background
+IN_BKGI=$HERE/background_imprint
 
 # Modify the output directory here. Default has the pmap number in it (if set).
 OUT_PFX=${N}pmap
-# subdirectories for output are made here
-for d in science science_imprint background background_imprint
-do mkdir -p $OUT_PFX/$d
-done
-OUT_SCI=$(realpath $OUT_PFX/science)
-OUT_SCII=$(realpath $OUT_PFX/science_imprint)
-OUT_BKG=$(realpath $OUT_PFX/background)
-OUT_BKGI=$(realpath $OUT_PFX/background_imprint)
+OUT_SCI=$HERE/$OUT_PFX/science
+OUT_SCII=$HERE/$OUT_PFX/science_imprint
+OUT_BKG=$HERE/$OUT_PFX/background
+OUT_BKGI=$HERE/$OUT_PFX/background_imprint
 
 # -- run the pipeline --
 # ______________________
@@ -77,7 +75,7 @@ pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG
 # science imprint
 pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII
 # science
-python $SCRIPT -j $J -s 1 -o $OUT_SCI $IN_SCI
+pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI
 
 # -- reduction without NSClean --
 # _______________________________
@@ -94,13 +92,10 @@ python $SCRIPT -j $J -s 1 -o $OUT_SCI $IN_SCI
 # Apply NSClean (1/f noise correction) to the stage 1 data, and run stage 2 and 3 again. Similar
 # subdirectories need to be made.
 OUT_PFX_NSC=${OUT_PFX}_nsclean
-for d in science science_imprint background background_imprint
-do mkdir -p $OUT_PFX_NSC/$d/stage1
-done
-OUT_SCI_NSC=$(realpath $OUT_PFX_NSC/science)
-OUT_SCII_NSC=$(realpath $OUT_PFX_NSC/science_imprint)
-OUT_BKG_NSC=$(realpath $OUT_PFX_NSC/background)
-OUT_BKGI_NSC=$(realpath $OUT_PFX_NSC/background_imprint)
+OUT_SCI_NSC=$HERE/$OUT_PFX_NSC/science
+OUT_SCII_NSC=$HERE/$OUT_PFX_NSC/science_imprint
+OUT_BKG_NSC=$HERE/$OUT_PFX_NSC/background
+OUT_BKGI_NSC=$HERE/$OUT_PFX_NSC/background_imprint
 
 # Use GNU parallel for performance
 parallel -j $J nsclean_run {} $OUT_BKG_NSC/stage1/{/} ::: $OUT_BKG/stage1/*rate.fits
