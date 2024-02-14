@@ -23,9 +23,9 @@ class InstrumentsPipelines:
         self.back_dir = args.back_dir
         obsfile = sorted(Path(self.obs_dir).glob("*.fits"))[0]
         self.out_dir = (
-            Path(self.obs_dir) / ".."
+            str(Path(self.obs_dir) / "..")
             if args.output_dir is None
-            else Path(args.output_dir)
+            else args.output_dir
         )
         self.intermediate_dir = (
             self.out_dir if args.intermediate_dir is None else args.intermediate_dir
@@ -39,41 +39,40 @@ class InstrumentsPipelines:
         self.is_spectroscopy = self.instru == "MIR_MRS" or self.instru == "NRS_IFU"
 
     def run_pipeline(self, max_cores=1):
-        # make output directory
-        Path(self.out_dir).mkdir(parents=True, exist_ok=True)
-
         # run requested stages
         for stage in self.stage_numbers:
+            # set up output path and make subdir
+            output_path = Path(self.out_dir) / f"stage{stage}/"
+            output_path.mkdir(parents=True, exist_ok=True)
+
             # choose input files
             if stage == 1:
-                inputs = sorted([str(p) for p in Path(self.obs_dir).glob("*_uncal.fits")])
+                inputs = sorted(
+                    [str(p) for p in Path(self.obs_dir).glob("*_uncal.fits")]
+                )
             elif stage == 2:
                 inputs = create_association.create_asn(
-                    str(self.intermediate_dir),
+                    self.intermediate_dir,
                     "stage1/*_rate.fits",
                     level=2,
-                    backdir=str(self.back_dir),
-                    impdir=str(self.imp_dir),
+                    backdir=self.back_dir,
+                    impdir=self.imp_dir,
                     output_dir=str(Path(self.intermediate_dir) / "stage1/"),
                 )
             elif stage == 3:
                 inputs = create_association.create_asn(
-                    str(self.intermediate_dir),
+                    self.intermediate_dir,
                     "stage2/*_cal.fits",
                     level=3,
-                    backdir=str(self.back_dir),
+                    backdir=self.back_dir,
                     spectroscopy=self.is_spectroscopy,
                     per_pointing=self.per_pointing,
                     output_dir=str(Path(self.intermediate_dir) / "stage2/"),
                 )
 
-            # set up output path and make subdir
-            output_dir = Path(self.out_dir) / f"stage{stage}/"
-            output_dir.mkdir(parents=True, exist_ok=True)
-
             # get pipeline, options, and run
             pipeline, options = pipeline_class_and_options_dict(
-                stage, self.instru, str(output_dir)
+                stage, self.instru, str(output_path)
             )
             run_stage_many(max_cores, inputs, pipeline, options)
 
