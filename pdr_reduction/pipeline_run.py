@@ -46,7 +46,7 @@ class InstrumentsPipelines:
         for stage in self.stage_numbers:
             # choose input files
             if stage == 1:
-                inputs = sorted(list(Path(self.obs_dir).glob("*_uncal.fits")))
+                inputs = sorted([str(p) for p in Path(self.obs_dir).glob("*_uncal.fits")])
             elif stage == 2:
                 inputs = create_association.create_asn(
                     str(self.intermediate_dir),
