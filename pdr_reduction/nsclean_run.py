@@ -13,6 +13,7 @@ import numpy as np
 from astropy.io import fits
 import nsclean
 from importlib.resources import files
+from pathlib import Path
 
 
 def main():
@@ -86,6 +87,7 @@ def main():
     H0["NSCLEANV"] = nsclean.__version__
     all_hdus[0].header = H0
     all_hdus.info()  # info before we write
+    Path(args.rate_out).parent.mkdir(parents=True, exist_ok=True)
     all_hdus.writeto(args.rate_out, overwrite=True)
     all_hdus.close()
 
