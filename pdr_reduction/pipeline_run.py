@@ -1,4 +1,3 @@
-import glob
 import jwst
 from jwst import datamodels
 from crds.config import get_crds_env_context
@@ -22,7 +21,7 @@ class InstrumentsPipelines:
         self.obs_dir = args.source_dir
         self.imp_dir = args.imp_dir
         self.back_dir = args.back_dir
-        obsfile = sorted(glob.glob(self.obs_dir + "/*.fits"))[0]
+        obsfile = sorted(Path(self.obs_dir).glob("*.fits"))[0]
         self.out_dir = (
             Path(self.obs_dir) / ".."
             if args.output_dir is None
@@ -47,25 +46,25 @@ class InstrumentsPipelines:
         for stage in self.stage_numbers:
             # choose input files
             if stage == 1:
-                inputs = sorted(list(glob.glob(self.obs_dir + "/*_uncal.fits")))
+                inputs = sorted(list(Path(self.obs_dir).glob("*_uncal.fits")))
             elif stage == 2:
                 inputs = create_association.create_asn(
-                    self.intermediate_dir,
+                    str(self.intermediate_dir),
                     "stage1/*_rate.fits",
                     level=2,
-                    backdir=self.back_dir,
-                    impdir=self.imp_dir,
-                    output_dir=Path(self.intermediate_dir) / "stage1/",
+                    backdir=str(self.back_dir),
+                    impdir=str(self.imp_dir),
+                    output_dir=str(Path(self.intermediate_dir) / "stage1/"),
                 )
             elif stage == 3:
                 inputs = create_association.create_asn(
-                    self.intermediate_dir,
+                    str(self.intermediate_dir),
                     "stage2/*_cal.fits",
                     level=3,
-                    backdir=self.back_dir,
+                    backdir=str(self.back_dir),
                     spectroscopy=self.is_spectroscopy,
                     per_pointing=self.per_pointing,
-                    output_dir=Path(self.intermediate_dir) / "stage2/",
+                    output_dir=str(Path(self.intermediate_dir) / "stage2/"),
                 )
 
             # set up output path and make subdir
