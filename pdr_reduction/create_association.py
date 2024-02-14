@@ -178,14 +178,10 @@ def create_asn(
 
     asnlist = []
     if level == 2:
-        if backdir is not None and impdir is not None:
-            raise RuntimeError(
-                "Stage 2 cannot have both backgrounds (imaging only) and imprints (nirspec only)."
-            )
-        elif backdir is not None:
+        if backdir is not None:
             bkg_dict = glob_and_make_per_filter_dict(backdir, bkg_pattern)
             print("Found backgrounds", bkg_dict)
-        elif impdir is not None:
+        if impdir is not None:
             imp_dict = glob_and_make_per_filter_dict(impdir, "stage1/*rate.fits")
 
         asnlist = create_asn_per_filter(
