@@ -46,17 +46,14 @@ python -c "import sys; print(sys.executable)"
 
 # Specify input directories as recommended in the readme. The script needs absolute paths for
 # everything. This is a quirk of the association generator.
-IN_SCI=$(realpath science)
-IN_BKG=$(realpath background)
+HERE=$(pwd | realpath)
+IN_SCI=$HERE/science
+IN_BKG=$HERE/background
 
 # Modify the output directory here. Default has the pmap number in it (if set).
 OUT_PFX=${N}pmap
-# subdirectories for output are made here
-for d in science background
-do mkdir -p $OUT_PFX/$d
-done
-OUT_SCI=$(realpath $OUT_PFX/science)
-OUT_BKG=$(realpath $OUT_PFX/background)
+OUT_SCI=$HERE/$OUT_PFX/science
+OUT_BKG=$HERE/$OUT_PFX/background
 
 # -- run the pipeline --
 # ______________________
