@@ -44,7 +44,7 @@ python -c "import sys; print(sys.executable)"
 
 # Specify input directories as recommended in the readme. The script needs absolute paths for
 # everything. This is a quirk of the association generator.
-HERE=$(pwd | realpath)
+HERE=$(pwd)
 IN_SCI=$HERE/science
 IN_BKG=$HERE/background
 
@@ -60,12 +60,12 @@ OUT_BKG=$HERE/$OUT_PFX/background
 # the commands below assume that the pdr_reduction python package is installed
 
 # background (need up to stage 2)
-pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG
+pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG &> $OUT_BKG/log12.txt
 # background stage 3 if interested
-# pipeline -j $JJ -s 3 -o $OUT_BKG $IN_BKG
+# pipeline -j $JJ -s 3 -o $OUT_BKG $IN_BKG &> $OUT_BKG/log3.txt
 
 # science
-pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI
+pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI &> $OUT_SCI/log1.txt
 # stage 2 with optional residual fringe correction
-pipeline -j $J -s 2 --residual_fringe -o $OUT_SCI $IN_SCI
-pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI $IN_SCI
+pipeline -j $J -s 2 --residual_fringe -o $OUT_SCI $IN_SCI &> $OUT_SCI/log2.txt
+pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI $IN_SCI &> $OUT_SCI/log3.txt

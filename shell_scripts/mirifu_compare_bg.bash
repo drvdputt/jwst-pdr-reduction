@@ -46,7 +46,7 @@ python -c "import sys; print(sys.executable)"
 
 # Specify input directories as recommended in the readme. The script needs absolute paths for
 # everything. This is a quirk of the association generator.
-HERE=$(pwd | realpath)
+HERE=$(pwd)
 IN_SCI=$HERE/science
 IN_BKG=$HERE/background
 

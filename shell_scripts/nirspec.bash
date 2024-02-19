@@ -47,7 +47,7 @@ python -c "import sys; print(sys.executable)"
 
 # Specify input directories as recommended in the readme. The script needs absolute paths for
 # everything. This is a quirk of the association generator.
-HERE=$(pwd | realpath)
+HERE=$(pwd)
 IN_SCI=$HERE/science
 IN_SCII=$HERE/science_imprint
 IN_BKG=$HERE/background
@@ -66,16 +66,16 @@ OUT_BKGI=$HERE/$OUT_PFX/background_imprint
 # the commands below assume that the pdr_reduction python package is installed
 
 # background imprint (need up to stage 1)
-pipeline -j $J -s 1 -o $OUT_BKGI $IN_BKGI
+pipeline -j $J -s 1 -o $OUT_BKGI $IN_BKGI &> $OUT_BKGI/log1.txt
 # background (need up to stage 2)
-pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG
+pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG &> $OUT_BKG/log12.txt
 # background stage 3 if interested
 # pipeline -j $JJ -s 3 -o $OUT_BKG $IN_BKG
 
 # science imprint
-pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII
+pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII &> $OUT_SCII/log1.txt
 # science
-pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI
+pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI &> $OUT_SCI/log1.txt
 
 # -- reduction without NSClean --
 # _______________________________
@@ -104,6 +104,6 @@ parallel -j $J nsclean_run {} $OUT_SCII_NSC/stage1/{/} ::: $OUT_SCII/stage1/*rat
 parallel -j $J nsclean_run {} $OUT_SCI_NSC/stage1/{/} ::: $OUT_SCI/stage1/*rate.fits
 
 # the rest of the steps with the cleaned data
-pipeline -j $J -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG
-pipeline -j $J -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI
-pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI_NSC $IN_SCI
+pipeline -j $J -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG &> $OUT_BKG_NSC/log2.txt
+pipeline -j $J -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI &> $OUT_SCI_NSC/log2.txt
+pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI_NSC $IN_SCI &> $OUT_SCI_NSC/log3.txt
