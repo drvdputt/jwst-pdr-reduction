@@ -67,5 +67,5 @@ pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG &> $OUT_BKG/log12.txt
 # science
 pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI &> $OUT_SCI/log1.txt
 # stage 2 with optional residual fringe correction
-pipeline -j $J -s 2 --residual_fringe -o $OUT_SCI $IN_SCI &> $OUT_SCI/log2.txt
-pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI $IN_SCI &> $OUT_SCI/log3.txt
+pipeline -j $J -s 2 --residual_fringe -b $OUT_BKG -o $OUT_SCI $IN_SCI &> $OUT_SCI/log2.txt
+pipeline -j $JJ -s 3 --mosaic -o $OUT_SCI $IN_SCI &> $OUT_SCI/log3.txt
