@@ -7,19 +7,16 @@ license = "LICENSE"
 readme = "readme.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9"
-jwst = "^1.12.5"
-# jwst needs this version of scipy. I set it explicity because it solved scipy installation troubles.
-scipy = "1.9.3"
-crds = "^11.17.10"
-dill = "^0.3.7"
-astropy = "^5.3.4"
-multiprocess = "^0.70.15"
-specutils = "^1.12.0"
-regions = "^0.8"
-pahfitcube = {git = "https://github.com/drvdputt/PAHFITcube"}
+python = ">=3.9,<3.12"
+astropy = "^6.0.0"
+crds = "^11.17.16"
+dill = "^0.3.8"
+jwst = "^1.13.4"
+multiprocess = "^0.70.16"
 myastro = {git = "https://github.com/drvdputt/my-astro"}
-
+pahfitcube = {git = "https://github.com/drvdputt/PAHFITcube"}
+regions = "^0.8"
+specutils = "^1.13.0"
 
 [build-system]
 requires = ["poetry-core"]
