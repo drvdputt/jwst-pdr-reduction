@@ -79,7 +79,9 @@ class InstrumentsPipelines:
                 stage, self.instru, str(output_path)
             )
             # user-defined options, just for this run (not in default pipeline_settings.py)
-            apply_custom_options(options, self.custom_options)
+            if self.custom_options is not None:
+                print("Applying custom settings from", self.custom_options)
+                apply_custom_options(options, self.custom_options)
 
             run_stage_many(max_cores, inputs, pipeline, options)
 
