@@ -4,7 +4,10 @@ from crds.config import get_crds_env_context
 from pdr_reduction.pipeline_arguments import parse_args
 from pdr_reduction import create_association
 from pdr_reduction.parallel_tools import run_stage_many
-from pdr_reduction.pipeline_settings import pipeline_class_and_options_dict
+from pdr_reduction.pipeline_settings import (
+    pipeline_class_and_options_dict,
+    apply_custom_options,
+)
 from pathlib import Path
 
 print("JWST pipeline version", jwst.__version__)
@@ -21,6 +24,7 @@ class InstrumentsPipelines:
         self.obs_dir = args.source_dir
         self.imp_dir = args.imp_dir
         self.back_dir = args.back_dir
+        self.custom_options = args.custom_options
         obsfile = sorted(Path(self.obs_dir).glob("*.fits"))[0]
         self.out_dir = (
             str(Path(self.obs_dir) / "..")
@@ -74,6 +78,9 @@ class InstrumentsPipelines:
             pipeline, options = pipeline_class_and_options_dict(
                 stage, self.instru, str(output_path)
             )
+            # user-defined options, just for this run (not in default pipeline_settings.py)
+            apply_custom_options(options, self.custom_options)
+
             run_stage_many(max_cores, inputs, pipeline, options)
 
 

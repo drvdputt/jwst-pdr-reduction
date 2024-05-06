@@ -68,4 +68,11 @@ def parse_args():
         help="Enable residual fringe correction (stage 2 spectroscopy only)",
     )
 
+    parser.add_argument(
+        "--custom_options",
+        type=str,
+        help="""JSON file to define extra pipeline options. Should
+        reflect the kwargs given to the call() function of a pipeline.""",
+    )
+
     return parser.parse_args()

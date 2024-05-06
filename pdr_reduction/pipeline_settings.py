@@ -5,10 +5,24 @@ from jwst.pipeline import (
     Image2Pipeline,
     Image3Pipeline,
 )
+import json
 
 
 def default_dict(output_dir):
     return dict(output_dir=output_dir, save_results=True)
+
+
+def apply_custom_options(existing_settings, settings_json):
+    """Parse JSON file and add the options to the options dict."""
+
+    with open(settings_json) as f:
+        d = json.load(f)
+
+    existing_settings.setdefault("steps", {})
+    for step_name in d["steps"]:
+        existing_settings["steps"].setdefault(step_name, {})
+        for option_name, option_value in d["steps"][step_name].items():
+            existing_settings["steps"][step_name][option_name] = option_value
 
 
 def pipeline_class_and_options_dict(stage, instrument, output_dir):
