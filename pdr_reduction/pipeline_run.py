@@ -82,6 +82,7 @@ class InstrumentsPipelines:
             if self.custom_options is not None:
                 print("Applying custom settings from", self.custom_options)
                 apply_custom_options(options, self.custom_options)
+                print("Final options are: ", options)
 
             run_stage_many(max_cores, inputs, pipeline, options)
 
