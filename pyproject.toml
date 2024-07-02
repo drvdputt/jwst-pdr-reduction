@@ -7,7 +7,7 @@ license = "LICENSE"
 readme = "readme.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.9,<=3.12"
 astropy = "^6.0.0"
 crds = "^11.17.16"
 dill = "^0.3.8"
