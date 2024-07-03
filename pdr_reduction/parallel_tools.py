@@ -1,7 +1,7 @@
 # this has problems returning the JWST datamodels (i.e. the output of
 # the steps), because they're not pickleable. But the import below
 # works! It's a third-party package that uses dill for pickling
-from multiprocess.pool import Pool
+from multiprocess import get_context
 from functools import partial
 
 
@@ -44,11 +44,12 @@ def run_function_many(func, args, max_cores):
 
     """
     if max_cores > 1:
+
         print("running in parallel on ", args)
-        p = Pool(max_cores)
-        _ = p.map(func, args)
-        p.close()
-        p.join()
+        with get_context("spawn").Pool(max_cores) as p:
+            _ = p.map(func, args)
+            p.close()
+            p.join()
     else:
         print("running normal for loop over", args)
         for x in args:
