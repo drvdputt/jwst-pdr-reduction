@@ -7,11 +7,11 @@ license = "LICENSE"
 readme = "readme.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<=3.12"
+python = ">3.10,<3.13"
 astropy = "^6.0.0"
 crds = "^11.17.16"
 dill = "^0.3.8"
-jwst = "^1.13.4"
+jwst = "*"
 multiprocess = "^0.70.16"
 myastro = {git = "https://github.com/drvdputt/my-astro"}
 pahfitcube = {git = "https://github.com/drvdputt/PAHFITcube"}
