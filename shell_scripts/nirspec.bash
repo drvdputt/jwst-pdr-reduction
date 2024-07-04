@@ -133,7 +133,7 @@ parallel_shorthand $J bkg_2
 # science stage 2
 pipeline -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI
 mv strun_calwebb_spec2_jobs.sh jobs_sci_2.sh
-parallel_shorthand $J sci2
+parallel_shorthand $J sci_2
 
 # science stage 3
 pipeline -s 3 --mosaic -b $OUT_BKG_NSC -o $OUT_SCI_NSC $IN_SCI
