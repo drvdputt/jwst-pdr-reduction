@@ -65,23 +65,30 @@ OUT_BKGI=$HERE/$OUT_PFX/background_imprint
 
 # the commands below assume that the pdr_reduction python package is installed
 
-# background imprint (need up to stage 1)
+parallel_shorthand () {
+    echo $2
+    parallel --progress -j $1 {} ">>"log_$2_cpu{%} '2>&1' :::: jobs_$2.sh
+}
+
+# # background imprint (need up to stage 1)
 pipeline -s 1 -o $OUT_BKGI $IN_BKGI
 mv strun_calwebb_detector1_jobs.sh jobs_bkgi_1.sh
-parallel -j $J {} ">>"log_bkgi_1_cpu{%} '2>&1' :::: jobs_bkgi_1.sh
+parallel_shorthand $J bkgi_1
 
-# background
+# # background
 pipeline -s 1 -o $OUT_BKG $IN_BKG
 mv strun_calwebb_detector1_jobs.sh jobs_bkg_1.sh
-parallel -j $J {} ">>"log_bkg_1_cpu{%} '2>&1' :::: jobs_bkg_1.sh
+parallel_shorthand $J bkg_1
 
-# science imprint
+# # science imprint
 pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII
 mv strun_calwebb_detector1_jobs.sh jobs_scii_1.sh
-parallel -j $J {} ">>"log_scii_1_cpu{%} '2>&1' :::: jobs_scii_1.sh
+parallel_shorthand $J scii_1
 
-# science
-# pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI &> log_sci_1.txt
+# # science
+pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI
+mv strun_calwebb_detector1_jobs.sh jobs_sci_1.sh
+parallel_shorthand $J sci_1
 
 # -- reduction without NSClean --
 # _______________________________
@@ -121,14 +128,14 @@ parallel -j $J nsclean_run {} $OUT_SCI_NSC/stage1/{/} ::: $OUT_SCI/stage1/*rate.
 # background stage 2
 pipeline -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG
 mv strun_calwebb_spec2_jobs.sh jobs_bkg_2.sh
-parallel -j $J {} ">>"log_bkg_2_cpu{%} '2>&1' :::: jobs_bkg_2.sh
+parallel_shorthand $J bkg_2
 
 # science stage 2
 pipeline -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI
 mv strun_calwebb_spec2_jobs.sh jobs_sci_2.sh
-parallel -j $J {} ">>"log_sci_2_cpu{%} '2>&1' :::: jobs_sci_2.sh
+parallel_shorthand $J sci2
 
 # science stage 3
 pipeline -s 3 --mosaic -b $OUT_BKG_NSC -o $OUT_SCI_NSC $IN_SCI
 mv strun_calwebb_spec3_jobs.sh jobs_sci_3.sh
-parallel -j $JJ  {} ">>"log_sci_3_cpu{%} '2>&1' :::: jobs_sci_3.sh
+parallel_shorthand 1 sci_3

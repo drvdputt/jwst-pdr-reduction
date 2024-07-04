@@ -59,13 +59,29 @@ OUT_BKG=$HERE/$OUT_PFX/background
 
 # the commands below assume that the pdr_reduction python package is installed
 
-# background (need up to stage 2)
-pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG &> log_bkg_12.txt
-# background stage 3 if interested
-pipeline -j $JJ -s 3 -o $OUT_BKG $IN_BKG &> log_bkg_3.txt
+parallel_shorthand () {
+    echo $2
+    parallel --progress -j $1 {} ">>"log_$2_cpu{%} '2>&1' :::: jobs_$2.sh
+}
+
+# background
+pipeline -s 1 -o $OUT_BKG $IN_BKG
+mv strun_calwebb_detector1_jobs.sh jobs_bkg_1.sh
+parallel_shorthand $J bkg_1
+
+pipeline -s 2 -o $OUT_BKG $IN_BKG
+mv strun_calwebb_spec2_jobs.sh jobs_bkg_2.sh
+parallel_shorthand $J bkg_2
 
 # science
-pipeline -j $J -s 1 --custom_options performance.json -o $OUT_SCI $IN_SCI &> log_sci_1.txt
-# stage 2 with optional residual fringe correction
-pipeline -j $J -s 2 --residual_fringe -b $OUT_BKG -o $OUT_SCI $IN_SCI &> log_sci_2.txt
-pipeline -j $JJ -s 3 --mosaic -o $OUT_SCI $IN_SCI &> log_sci_3.txt
+pipeline -s 1 -o $OUT_SCI $IN_SCI
+mv strun_calwebb_detector1_jobs.sh jobs_sci_1.sh
+parallel_shorthand $J sci_1
+
+pipeline -s 2 --residual_fringe -b $OUT_BKG -o $OUT_SCI $IN_SCI
+mv strun_calwebb_spec2_jobs.sh jobs_sci_2.sh
+parallel_shorthand $J sci_2
+
+pipeline -s 3 --mosaic -o $OUT_SCI $IN_SCI
+mv strun_calwebb_spec3_jobs.sh jobs_sci_3.sh
+parallel_shorthand 1 sci_3
