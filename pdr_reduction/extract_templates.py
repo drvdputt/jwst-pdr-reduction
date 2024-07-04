@@ -51,7 +51,7 @@ def main():
     else:
         template_names = args.template_names
 
-    t = extract_templates_table(cubes, apertures, args.apply_offsets, template_names)
+    t = extract_templates_table(cubes, apertures, template_names, args.apply_offsets)
     fname = "templates.ecsv"
     print(f"Writing extracted spectra to {fname}")
     t.write(fname, overwrite=True)
