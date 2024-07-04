@@ -8,16 +8,16 @@
 # J is the number of processes for stage 1 and 2. The recommended limit, is to make sure you
 # have about 10 GB of RAM per process. For the science cluster at ST, with 512 GB RAM, I use
 # J=48.
-J=48
+J=1
 
 # JJ is the number of processes for stage 3, where cube_build is a big memory bottleneck. The
 # required memory depends heavily on the final shape of the cube.
-JJ=3
+JJ=1
 
 # Use these if there's too much multithreading. On machines with high core counts, numpy etc can
 # sometimes launch a large number of threads. This can actually slow things down if
 # multiprocessing is used already.
-T=1
+T=8
 export MKL_NUM_THREADS=$T
 export NUMEXPR_NUM_THREADS=$T
 export OMP_NUM_THREADS=$T
@@ -28,7 +28,7 @@ export OPENBLAS_NUM_THREADS=$T
 
 # Set CRDS context here. If N is not a number, no context will be set, resulting in the latest
 # pmap.
-export CRDS_PATH=/home/dvandeputte/storage/crds_cache
+export CRDS_PATH=$HOME/crds_cache
 export CRDS_SERVER_URL=https://jwst-crds.stsci.edu
 # N=1147
 N=latest

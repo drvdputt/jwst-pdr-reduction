@@ -6,19 +6,19 @@
 # J is the number of processes for stage 1 and 2. The recommended limit, is to make sure you
 # have about 10 GB of RAM per process. For the science cluster at ST, with 512 GB RAM, I use
 # J=48.
-J=2
+J=1
 
 # JJ is the number of processes for stage 3, where cube_build is a big memory bottleneck. The
 # required memory depends heavily on the final shape of the cube. For Orion, there is lots of
 # empty space in the cubes with the default coordinate grids, and about 50 GB of RAM was needed
 # per process. But with ~200GB RAM, the 3 NIRSpec cubes can be built simultaneously, which saves
 # some time for this slow step.
-JJ=2
+JJ=1
 
 # Use these if there's too much multithreading. On machines with high core counts, numpy etc can
 # sometimes launch a large number of threads. This doesn't give much speedup if multiprocessing
 # is used already.
-T=4
+T=8
 export MKL_NUM_THREADS=$T
 export NUMEXPR_NUM_THREADS=$T
 export OMP_NUM_THREADS=$T
@@ -66,16 +66,16 @@ OUT_BKGI=$HERE/$OUT_PFX/background_imprint
 # the commands below assume that the pdr_reduction python package is installed
 
 # background imprint (need up to stage 1)
-pipeline -j $J -s 1 -o $OUT_BKGI $IN_BKGI &> bkgi_log1.txt
+pipeline -j $J -s 1 -o $OUT_BKGI $IN_BKGI &> log_bkgi_1.txt
 # background (need up to stage 2)
-pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG &> bkg_log12.txt
+pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG &> log_bkg_12.txt
 # background stage 3 if interested
 # pipeline -j $JJ -s 3 -o $OUT_BKG $IN_BKG
 
 # science imprint
-pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII &> scii_log1.txt
+pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII &> log_scii_1.txt
 # science
-pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI &> sci_log1.txt
+pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI &> log_sci_1.txt
 
 # -- reduction without NSClean --
 # _______________________________
@@ -104,6 +104,6 @@ parallel -j $J nsclean_run {} $OUT_SCII_NSC/stage1/{/} ::: $OUT_SCII/stage1/*rat
 parallel -j $J nsclean_run {} $OUT_SCI_NSC/stage1/{/} ::: $OUT_SCI/stage1/*rate.fits
 
 # the rest of the steps with the cleaned data
-pipeline -j $J -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG &> bkg_nsc_log2.txt
-pipeline -j $J -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI &> sci_nsc_log2.txt
-pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG_NSC -o $OUT_SCI_NSC $IN_SCI &> sci_nsc_log3.txt
+pipeline -j $J -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG &> log_bkg_nsc_2.txt
+pipeline -j $J -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI &> log_sci_nsc_2.txt
+pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG_NSC -o $OUT_SCI_NSC $IN_SCI &> log_sci_nsc_3.txt
