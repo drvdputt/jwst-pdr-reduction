@@ -2,8 +2,6 @@
 # the steps), because they're not pickleable. But the import below
 # works! It's a third-party package that uses dill for pickling
 from multiprocess import get_context
-from functools import partial
-
 
 def run_stage_many(max_cores, obsfiles, stage_class, stage_options_dict=None):
     """
@@ -26,12 +24,25 @@ def run_stage_many(max_cores, obsfiles, stage_class, stage_options_dict=None):
                                         steps={'jump': {'threshold': 12.0, 'save_results':True}})
 
     """
-    kwargs = {} if stage_options_dict is None else stage_options_dict
-    # define wrapper to call with kwargs already filled in. The only
-    # other argument is the first positional one, which
-    # run_function_many will fill in.
-    f = partial(stage_class.call, **kwargs)
-    run_function_many(f, obsfiles, max_cores)
+    strun_command_base = f"strun {stage_class.class_alias}"
+    options = ""
+    for opt_k, opt_v in stage_options_dict.items():
+        if opt_k == "steps":
+            for step, step_pars in opt_v.items():
+                for par, par_v in step_pars.items():
+                    options += f" --steps.{step}.{par}={par_v}"
+        else:
+            options += f" --{opt_k}={opt_v}"
+
+    job_fname = f"strun_{stage_class.class_alias}_jobs.sh"
+    with open(job_fname, "w") as f:
+        for input_fn in obsfiles:
+            strun_command = f"{strun_command_base} {input_fn} {options}"
+            f.write(strun_command + "\n")
+
+    print("wrote job file to ", job_fname)
+    print("to execute jobs in parallel, use:")
+    print(f"parallel -j {max_cores} ::: {job_fname}")
 
 
 def run_function_many(func, args, max_cores):

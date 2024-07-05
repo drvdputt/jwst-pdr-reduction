@@ -6,7 +6,7 @@
 # J is the number of processes for stage 1 and 2. The recommended limit, is to make sure you
 # have about 10 GB of RAM per process. For the science cluster at ST, with 512 GB RAM, I use
 # J=48.
-J=1
+J=4
 
 # JJ is the number of processes for stage 3, where cube_build is a big memory bottleneck. The
 # required memory depends heavily on the final shape of the cube. For Orion, there is lots of
@@ -65,26 +65,47 @@ OUT_BKGI=$HERE/$OUT_PFX/background_imprint
 
 # the commands below assume that the pdr_reduction python package is installed
 
-# background imprint (need up to stage 1)
-pipeline -j $J -s 1 -o $OUT_BKGI $IN_BKGI &> log_bkgi_1.txt
-# background (need up to stage 2)
-pipeline -j $J -s 12 -o $OUT_BKG $IN_BKG &> log_bkg_12.txt
-# background stage 3 if interested
-# pipeline -j $JJ -s 3 -o $OUT_BKG $IN_BKG
+parallel_shorthand () {
+    echo $2
+    parallel --progress -j $1 {} ">>"log_$2_cpu{%} '2>&1' :::: jobs_$2.sh
+}
 
-# science imprint
-pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII &> log_scii_1.txt
-# science
-pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI &> log_sci_1.txt
+# # background imprint (need up to stage 1)
+pipeline -s 1 -o $OUT_BKGI $IN_BKGI
+mv strun_calwebb_detector1_jobs.sh jobs_bkgi_1.sh
+parallel_shorthand $J bkgi_1
+
+# # background
+pipeline -s 1 -o $OUT_BKG $IN_BKG
+mv strun_calwebb_detector1_jobs.sh jobs_bkg_1.sh
+parallel_shorthand $J bkg_1
+
+# # science imprint
+pipeline -j $J -s 1 -o $OUT_SCII $IN_SCII
+mv strun_calwebb_detector1_jobs.sh jobs_scii_1.sh
+parallel_shorthand $J scii_1
+
+# # science
+pipeline -j $J -s 1 -o $OUT_SCI $IN_SCI
+mv strun_calwebb_detector1_jobs.sh jobs_sci_1.sh
+parallel_shorthand $J sci_1
 
 # -- reduction without NSClean --
 # _______________________________
+
+# background stage 2 needs imprints with -i
+# pipeline -s 2 -o $OUT_BKG $IN_BKG
+# mv strun_calwebb_spec2_jobs.sh jobs_bkg_2.sh
+# parallel -j $J {} ">>"log_bkg_2_cpu{%} '2>&1' :::: jobs_bkg_2.sh
 
 # science stage 2 needs imprints with -i
 # python $SCRIPT -j $J -s 2 -i $OUT_SCII -o $OUT_SCI $IN_SCI
 # science stage 3 needs background (if doing master background subtraction). For image-to-image
 # background subtraction, use the -b option in stage 2 instead.
 # python $SCRIPT -j $JJ -s 3 --mosaic -b $OUT_BKG -o $OUT_SCI $IN_SCI
+
+# background stage 3 if interested
+# pipeline -j $JJ -s 3 -o $OUT_BKG $IN_BKG
 
 # -- reduction with NSClean --
 # ____________________________
@@ -97,13 +118,24 @@ OUT_SCII_NSC=$HERE/$OUT_PFX_NSC/science_imprint
 OUT_BKG_NSC=$HERE/$OUT_PFX_NSC/background
 OUT_BKGI_NSC=$HERE/$OUT_PFX_NSC/background_imprint
 
-# Use GNU parallel for performance
 parallel -j $J nsclean_run {} $OUT_BKG_NSC/stage1/{/} ::: $OUT_BKG/stage1/*rate.fits
 parallel -j $J nsclean_run {} $OUT_BKGI_NSC/stage1/{/} ::: $OUT_BKGI/stage1/*rate.fits
 parallel -j $J nsclean_run {} $OUT_SCII_NSC/stage1/{/} ::: $OUT_SCII/stage1/*rate.fits
 parallel -j $J nsclean_run {} $OUT_SCI_NSC/stage1/{/} ::: $OUT_SCI/stage1/*rate.fits
 
 # the rest of the steps with the cleaned data
-pipeline -j $J -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG &> log_bkg_nsc_2.txt
-pipeline -j $J -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI &> log_sci_nsc_2.txt
-pipeline -j $JJ -s 3 --mosaic -b $OUT_BKG_NSC -o $OUT_SCI_NSC $IN_SCI &> log_sci_nsc_3.txt
+
+# background stage 2
+pipeline -s 2 -i $OUT_BKGI_NSC -o $OUT_BKG_NSC $IN_BKG
+mv strun_calwebb_spec2_jobs.sh jobs_bkg_2.sh
+parallel_shorthand $J bkg_2
+
+# science stage 2
+pipeline -s 2 -i $OUT_SCII_NSC -o $OUT_SCI_NSC $IN_SCI
+mv strun_calwebb_spec2_jobs.sh jobs_sci_2.sh
+parallel_shorthand $J sci_2
+
+# science stage 3
+pipeline -s 3 --mosaic -b $OUT_BKG_NSC -o $OUT_SCI_NSC $IN_SCI
+mv strun_calwebb_spec3_jobs.sh jobs_sci_3.sh
+parallel_shorthand 1 sci_3
