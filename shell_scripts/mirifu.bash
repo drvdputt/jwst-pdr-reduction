@@ -54,15 +54,21 @@ OUT_PFX=${N}pmap
 OUT_SCI=$HERE/$OUT_PFX/science
 OUT_BKG=$HERE/$OUT_PFX/background
 
-# -- run the pipeline --
-# ______________________
-
-# the commands below assume that the pdr_reduction python package is installed
+# -- set up logging --
+# --------------------
+OUT_LOG=$HERE/$OUT_PFX/log
+mkdir -p $OUT_LOG
+python -c 'import jwst; print(jwst.__version__)' > $OUT_LOG/versions.txt
+python -c 'import crds; print(crds.get_context_name("jwst"))' >> $OUT_LOG/versions.txt
 
 parallel_shorthand () {
     echo $2
-    parallel --progress -j $1 {} ">>"log_$2_cpu{%} '2>&1' :::: jobs_$2.sh
+    cp jobs_$2.sh $OUT_LOG/jobs_$2.sh # save the jobs too. Good to know the exact commands
+    parallel --progress -j $1 {} ">>"$OUT_LOG/$2_cpu{%} '2>&1' :::: jobs_$2.sh
 }
+
+# -- run the pipeline --
+# ______________________
 
 # background
 pipeline -s 1 -o $OUT_BKG $IN_BKG

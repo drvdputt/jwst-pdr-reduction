@@ -60,15 +60,21 @@ OUT_SCII=$HERE/$OUT_PFX/science_imprint
 OUT_BKG=$HERE/$OUT_PFX/background
 OUT_BKGI=$HERE/$OUT_PFX/background_imprint
 
-# -- run the pipeline --
-# ______________________
-
-# the commands below assume that the pdr_reduction python package is installed
+# -- set up logging --
+# --------------------
+OUT_LOG=$HERE/$OUT_PFX/log
+mkdir -p $OUT_LOG
+python -c 'import jwst; print(jwst.__version__)' > $OUT_LOG/versions.txt
+python -c 'import crds; print(crds.get_context_name("jwst"))' >> $OUT_LOG/versions.txt
 
 parallel_shorthand () {
     echo $2
-    parallel --progress -j $1 {} ">>"log_$2_cpu{%} '2>&1' :::: jobs_$2.sh
+    cp jobs_$2.sh $OUT_LOG/jobs_$2.sh # save the jobs too. Good to know the exact commands
+    parallel --progress -j $1 {} ">>"$OUT_LOG/$2_cpu{%} '2>&1' :::: jobs_$2.sh
 }
+
+# -- run the pipeline --
+# ______________________
 
 # # background imprint (need up to stage 1)
 pipeline -s 1 -o $OUT_BKGI $IN_BKGI
