@@ -27,6 +27,11 @@ def main():
         smoother. Resulting continuum might be unrealistic.""",
     )
     ap.add_argument(
+        "--reference_segment",
+        type=int,
+        help="""Index of the cube to use as a reference for spectral stitching"""
+    )
+    ap.add_argument(
         "--template_names",
         nargs="+",
         help="""Optional list of names to give to the template spectra.
