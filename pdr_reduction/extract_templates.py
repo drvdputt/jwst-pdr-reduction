@@ -2,6 +2,7 @@
 cubes.
 
 """
+
 import argparse
 from astropy.table import Table
 from astropy import units as u
@@ -29,7 +30,7 @@ def main():
     ap.add_argument(
         "--reference_segment",
         type=int,
-        help="""Index of the cube to use as a reference for spectral stitching"""
+        help="""Index of the cube to use as a reference for spectral stitching""",
     )
     ap.add_argument(
         "--template_names",
@@ -56,14 +57,22 @@ def main():
     else:
         template_names = args.template_names
 
-    t = extract_templates_table(cubes, apertures, template_names, args.apply_offsets)
+    t = extract_templates_table(
+        cubes, apertures, template_names, args.apply_offsets, args.reference_segment
+    )
     fname = "templates.ecsv"
     print(f"Writing extracted spectra to {fname}")
+
+    # add some info about which files these templates were generated from
+    t.meta["stitch_method"] = "additive"
+    t.meta["stitch_reference_segment"] = args.reference_segment
+    t.meta["cubes"] = args.cube_files
+
     t.write(fname, overwrite=True)
 
 
 # define this local utility function
-def extract_and_merge(cubes, aperture, apply_offsets):
+def extract_and_merge(cubes, aperture, apply_offsets, offset_reference=0):
     """Steps that need to happen for every aperture.
 
     1. extract from every given cube
@@ -74,7 +83,7 @@ def extract_and_merge(cubes, aperture, apply_offsets):
     if apply_offsets:
         shifts = spectral_segments.overlap_shifts(specs)
         # choose a segment in the middle as the reference for the stitching
-        offsets = spectral_segments.shifts_to_offsets(shifts, len(specs) // 2)
+        offsets = spectral_segments.shifts_to_offsets(shifts, offset_reference)
         specs_to_merge = [s + o for s, o in zip(specs, offsets)]
     else:
         specs_to_merge = specs
@@ -82,9 +91,11 @@ def extract_and_merge(cubes, aperture, apply_offsets):
     return spectral_segments.merge_1d(specs_to_merge)
 
 
-def extract_templates_table(cubes, apertures, template_names, apply_offsets=False):
+def extract_templates_table(
+    cubes, apertures, template_names, apply_offsets=False, offset_reference=0
+):
     templates = {
-        k: extract_and_merge(cubes, a, apply_offsets)
+        k: extract_and_merge(cubes, a, apply_offsets, offset_reference)
         for k, a in zip(template_names, apertures)
     }
 
