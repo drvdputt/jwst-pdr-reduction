@@ -48,7 +48,7 @@ def main():
 
     # set up template apertures and names
     regions = Regions.read(args.region_file)
-    apertures = [regionhacks.rectangle_to_aperture(r) for r in regions]
+    apertures = [regionhacks.skyregion_to_aperture_auto(r) for r in regions]
 
     # determine template names
     if args.template_names is None:
