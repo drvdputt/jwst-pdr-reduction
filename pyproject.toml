@@ -7,7 +7,7 @@ license = "LICENSE"
 readme = "readme.md"
 
 [tool.poetry.dependencies]
-python = ">3.10,<3.13"
+python = ">3.11,<3.13"
 astropy = "^6.0.0"
 crds = "^11.17.16"
 dill = "^0.3.8"
@@ -17,6 +17,7 @@ myastro = {git = "https://github.com/drvdputt/my-astro"}
 pahfitcube = {git = "https://github.com/drvdputt/PAHFITcube"}
 regions = "^0.8"
 specutils = "^1.13.0"
+pyqt6 = "^6.7.0"
 
 [build-system]
 requires = ["poetry-core"]
