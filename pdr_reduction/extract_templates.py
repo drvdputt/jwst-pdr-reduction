@@ -9,9 +9,9 @@ from astropy import units as u
 from astropy.wcs import WCS
 from astropy.wcs.utils import proj_plane_pixel_area
 from astropy.nddata import StdDevUncertainty
-from regions import Regions
+from regions import Regions, SkyRegion
 from specutils import Spectrum1D
-from myastro import spectral_segments, regionhacks
+from myastro import spectral_segments
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -53,23 +53,25 @@ def main():
 
     # set up template apertures and names
     regions = Regions.read(args.region_file)
-    apertures = [regionhacks.skyregion_to_aperture_auto(r) for r in regions]
+    # apertures = [regionhacks.skyregion_to_aperture_auto(r) for r in regions]
 
     # determine template names
     if args.template_names is None:
-        template_names = [f"T{i}" for i in range(1, len(apertures) + 1)]
+        template_names = [f"T{i}" for i in range(1, len(regions) + 1)]
     else:
         template_names = args.template_names
 
     t = extract_templates_table(
-        cubes, apertures, template_names, args.apply_offsets, args.reference_segment
+        cubes, regions, template_names, args.apply_offsets, args.reference_segment
     )
     fname = "templates.ecsv"
     print(f"Writing extracted spectra to {fname}")
 
     # add some info about which files these templates were generated from
     t.meta["stitch_method"] = "additive" if args.apply_offsets else "none"
-    t.meta["stitch_reference_segment"] = args.reference_segment if args.apply_offsets else "none"
+    t.meta["stitch_reference_segment"] = (
+        args.reference_segment if args.apply_offsets else "none"
+    )
     t.meta["cubes"] = args.cube_files
 
     t.write(fname, overwrite=True)
@@ -82,7 +84,7 @@ def extract_and_merge(cubes, aperture, apply_offsets, offset_reference=0):
     1. extract from every given cube
     2. apply stitching corrections
     3. return a single merged spectrum"""
-    specs = [cube_sky_aperture_extraction_v2(s, aperture) for s in cubes]
+    specs = [cube_sky_aperture_extraction_v3(s, aperture) for s in cubes]
 
     if apply_offsets:
         shifts = spectral_segments.overlap_shifts(specs)
@@ -115,17 +117,23 @@ def extract_templates_table(
     return t
 
 
-def cube_sky_aperture_extraction_v2(
-    cube_spec1d, sky_aperture, average_per_sr=True, wcs_2d=None
+def cube_sky_aperture_extraction_v3(
+    cube_spec1d, sky_region: SkyRegion, average_per_sr=True, wcs_2d=None
 ):
     """Extract spectrum cube using aperture in sky coordinates.
 
-    It's called v2, because I copied this from
-    pahfitcube/cube_aperture.py, but I intend to make changes to the
-    uncertainty calculation etc.
+    v3 uses a regions.Skyregion as a parameter, instead of a
+    photutils.SkyAperture. The newer regions package has duplicated some
+    of the internal functionality of photutils. And it turns out it
+    better suits my needs, for the following reasons.
 
-    In addition, recent updates to photutils have likely simplified how
-    this can be implemented. Should be just a wrapper now.
+    - There is an example of how to multiply the masks in the
+      documentation, meaning that this use case is supported.
+
+    - I do not have to convert between SkyRegion and SkyAperture. So I
+      no longer need this annoying boilerplate (per type of region) and
+      will be safer from bugs (e.g. the definition of the position angle
+      of a region was different in some cases).
 
     Parameters
     ----------
@@ -136,8 +144,8 @@ def cube_sky_aperture_extraction_v2(
         that a WCS can be derived. Alternatively, the wcs_2d parameter
         should be used to pass a celestial WCS manually.
 
-    sky_aperture: SkyAperture
-        The aperture to apply. Is converted to pixel mask suitable for the cube.
+    sky_region: SkyRegion
+        The region to use as an aperture.
 
     Returns
     -------
@@ -153,18 +161,9 @@ def cube_sky_aperture_extraction_v2(
 
     nx, ny = cube_spec1d.shape[:2]
 
-    # sky aperture -> pixel aperture -> ApertureMask object.
-    aperture_mask = sky_aperture.to_pixel(the_wcs_2d).to_mask(method="exact")
+    pixel_region = sky_region.to_pixel(the_wcs_2d)
+    aperture_mask = pixel_region.to_mask()
 
-    # did some reverse-engineering of photutils. First you have to make
-    # a cutout (the aperture_mask data is a small array, with a bounding
-    # box definition. Not the "full" mask). They probably do it like
-    # this for performance reasons. Unfortunately, it only allows 2D
-    # arrays, so we have to reimplement some steps here ourselves
-
-    # see docstrings in photutils.mask.get_overlap_slices to see what
-    # these mean. Caution: shape[1] is interpreted as x, and shape[0] as
-    # y here. Same with the returned 2D slices.
     slices_large, slices_small = aperture_mask.get_overlap_slices((ny, nx))
     yx_slc = slices_large
     weights = aperture_mask.data
@@ -175,9 +174,8 @@ def cube_sky_aperture_extraction_v2(
     # to ignore some things.. We also create a handy 3D mask that we can
     # multiply the other arrays with, to make sure we ignore the same
     # pixels for them.
-    cube_cutout = np.ma.masked_invalid(np.swapaxes(cube_spec1d.flux.value, 0, 1))[
-        yx_slc
-    ]
+    cube_ma_yx = np.ma.masked_invalid(np.swapaxes(cube_spec1d.flux.value, 0, 1))
+    cube_cutout = cube_ma_yx[yx_slc]
     cube_cutout_used = np.where(cube_cutout.mask, 0, 1)
 
     # plt.subplot(311)
@@ -213,10 +211,10 @@ def cube_sky_aperture_extraction_v2(
         # weight but without bad pixels -> slightly different per slice
         weight_per_slice = np.einsum("xyw,xy->w", cube_cutout_used, weights)
         area_per_slice = weight_per_slice * one_px_area
-        flux /= area_per_slice
+        flux = (flux / area_per_slice).to(cube_spec1d.flux.unit)
 
         if sigma_flux is not None:
-            sigma_flux /= area_per_slice
+            sigma_flux = (sigma_flux / area_per_slice).to(cube_spec1d.flux.unit)
 
     if sigma_flux is not None:
         sigma_flux = StdDevUncertainty(sigma_flux)
