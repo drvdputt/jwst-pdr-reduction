@@ -6,10 +6,14 @@ cubes.
 import argparse
 from astropy.table import Table
 from astropy import units as u
+from astropy.wcs import WCS
+from astropy.wcs.utils import proj_plane_pixel_area
+from astropy.nddata import StdDevUncertainty
 from regions import Regions
 from specutils import Spectrum1D
-from pahfitcube.cube_aperture import cube_sky_aperture_extraction
 from myastro import spectral_segments, regionhacks
+import numpy as np
+from matplotlib import pyplot as plt
 
 
 def main():
@@ -78,7 +82,7 @@ def extract_and_merge(cubes, aperture, apply_offsets, offset_reference=0):
     1. extract from every given cube
     2. apply stitching corrections
     3. return a single merged spectrum"""
-    specs = [cube_sky_aperture_extraction(s, aperture) for s in cubes]
+    specs = [cube_sky_aperture_extraction_v2(s, aperture) for s in cubes]
 
     if apply_offsets:
         shifts = spectral_segments.overlap_shifts(specs)
@@ -109,6 +113,121 @@ def extract_templates_table(
 
     t = Table(columns)
     return t
+
+
+def cube_sky_aperture_extraction_v2(
+    cube_spec1d, sky_aperture, average_per_sr=True, wcs_2d=None
+):
+    """Extract spectrum cube using aperture in sky coordinates.
+
+    It's called v2, because I copied this from
+    pahfitcube/cube_aperture.py, but I intend to make changes to the
+    uncertainty calculation etc.
+
+    In addition, recent updates to photutils have likely simplified how
+    this can be implemented. Should be just a wrapper now.
+
+    Parameters
+    ----------
+    cube_spec1d: Spectrum1D
+        Typically an object loaded from a cube file using
+        Spectrum1D.read. Can be a custom Spectrum1D object, but needs to
+        have the right header stored in cube_spec1d.meta["header"] so
+        that a WCS can be derived. Alternatively, the wcs_2d parameter
+        should be used to pass a celestial WCS manually.
+
+    sky_aperture: SkyAperture
+        The aperture to apply. Is converted to pixel mask suitable for the cube.
+
+    Returns
+    -------
+    spectrum: Spectrum1D
+        The collapsed spectrum.
+
+    """
+    # make 2D wcs of cube if needed
+    if wcs_2d is None:
+        the_wcs_2d = WCS(cube_spec1d.meta["header"]).celestial
+    else:
+        the_wcs_2d = wcs_2d
+
+    nx, ny = cube_spec1d.shape[:2]
+
+    # sky aperture -> pixel aperture -> ApertureMask object.
+    aperture_mask = sky_aperture.to_pixel(the_wcs_2d).to_mask(method="exact")
+
+    # did some reverse-engineering of photutils. First you have to make
+    # a cutout (the aperture_mask data is a small array, with a bounding
+    # box definition. Not the "full" mask). They probably do it like
+    # this for performance reasons. Unfortunately, it only allows 2D
+    # arrays, so we have to reimplement some steps here ourselves
+
+    # see docstrings in photutils.mask.get_overlap_slices to see what
+    # these mean. Caution: shape[1] is interpreted as x, and shape[0] as
+    # y here. Same with the returned 2D slices.
+    slices_large, slices_small = aperture_mask.get_overlap_slices((ny, nx))
+    yx_slc = slices_large
+    weights = aperture_mask.data
+    if slices_small is None:
+        print("No overlap between aperture and data!")
+
+    # Cut out the relevant data from the cube, and set up masked array
+    # to ignore some things.. We also create a handy 3D mask that we can
+    # multiply the other arrays with, to make sure we ignore the same
+    # pixels for them.
+    cube_cutout = np.ma.masked_invalid(np.swapaxes(cube_spec1d.flux.value, 0, 1))[
+        yx_slc
+    ]
+    cube_cutout_used = np.where(cube_cutout.mask, 0, 1)
+
+    # plt.subplot(311)
+    # plt.imshow(aperture_mask.to_image((ny, nx)))
+    # plt.subplot(312)
+    # plt.imshow(cube_cutout.sum(axis=-1))
+    # plt.subplot(313)
+    # plt.imshow(aperture_mask.data)
+    # plt.show()
+
+    # # Do the sum, broadcasting the mask over the slices. Einstein
+    # summation for clarity. Basically a vectorized version of aperture_mask.multiply
+    sum_per_slice = np.einsum(
+        "xyw,xy->w", np.where(cube_cutout_used, cube_cutout, 0), weights
+    )
+
+    # Add units again, and convert to MJy
+    one_px_area = (proj_plane_pixel_area(the_wcs_2d) * u.deg**2).to(u.sr)
+    flux = sum_per_slice * cube_spec1d.flux.unit * one_px_area
+
+    # Apply this to the variance array when uncertainty is provided
+    if cube_spec1d.uncertainty is not None:
+        uncertainty_cutout = np.swapaxes(cube_spec1d.uncertainty.array, 0, 1)[yx_slc]
+        variance_cutout = np.square(np.where(cube_cutout_used, uncertainty_cutout, 0))
+        varsum_per_slice = np.einsum("xyw,xy->w", variance_cutout, weights)
+        sigma_flux = np.sqrt(varsum_per_slice) * cube_spec1d.flux.unit * one_px_area
+    else:
+        sigma_flux = None
+
+    if average_per_sr:
+        # To compute an average, we need the total weight per slice.
+        # Weight * pixel size = total area. Num pixels used = total
+        # weight but without bad pixels -> slightly different per slice
+        weight_per_slice = np.einsum("xyw,xy->w", cube_cutout_used, weights)
+        area_per_slice = weight_per_slice * one_px_area
+        flux /= area_per_slice
+
+        if sigma_flux is not None:
+            sigma_flux /= area_per_slice
+
+    if sigma_flux is not None:
+        sigma_flux = StdDevUncertainty(sigma_flux)
+
+    # make a spectrum1d object for convenience
+    s1d = Spectrum1D(
+        spectral_axis=cube_spec1d.spectral_axis,
+        flux=flux,
+        uncertainty=sigma_flux,
+    )
+    return s1d
 
 
 if __name__ == "__main__":

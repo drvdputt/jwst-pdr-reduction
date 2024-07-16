@@ -14,7 +14,6 @@ dill = "^0.3.8"
 jwst = "*"
 multiprocess = "^0.70.16"
 myastro = {git = "https://github.com/drvdputt/my-astro"}
-pahfitcube = {git = "https://github.com/drvdputt/PAHFITcube"}
 regions = "^0.8"
 specutils = "^1.13.0"
 pyqt6 = "^6.7.0"
