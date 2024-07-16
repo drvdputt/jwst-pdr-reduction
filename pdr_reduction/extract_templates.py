@@ -68,8 +68,8 @@ def main():
     print(f"Writing extracted spectra to {fname}")
 
     # add some info about which files these templates were generated from
-    t.meta["stitch_method"] = "additive"
-    t.meta["stitch_reference_segment"] = args.reference_segment
+    t.meta["stitch_method"] = "additive" if args.apply_offsets else "none"
+    t.meta["stitch_reference_segment"] = args.reference_segment if args.apply_offsets else "none"
     t.meta["cubes"] = args.cube_files
 
     t.write(fname, overwrite=True)
